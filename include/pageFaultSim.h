@@ -22,9 +22,7 @@ private:
 
     //Page reference vector layout
     //Rerefence String, Phyical frame 0.. Phyical Frame N, Page faults, Victim frames.
-    std::vector<u16> workingOps;
     std::vector< std::vector<u16> > pageReference;
-    std::vector <std::vector<u16>> rightWayPR;
     u16 currentIndex=0, physicalFrameNumber=4, virtualFrameNumber=10, referenceSize=13;
 
 public:
@@ -43,7 +41,7 @@ public:
 
     si stdTemplateHW5();
 
-    si generateRandomVector(std::vector<u16> *fill);
+    void generateRandomVector(std::vector<u16>& toFill);
 
     std::string generateReferenceString();
 

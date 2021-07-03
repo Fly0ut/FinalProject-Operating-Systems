@@ -87,7 +87,6 @@ si pageFaultSim::zeroOutPageReference() {
     pageReference.clear();
     this->currentIndex = 0;
     pageReference.resize(this->physicalFrameNumber+3, std::vector<u16>(this->referenceSize, 0));
-    this->workingOps.resize(this->physicalFrameNumber);
     return  0;
 }
 
@@ -105,20 +104,18 @@ si pageFaultSim::stdTemplateHW5() {
     return 0;
 }
 
-si pageFaultSim::generateRandomVector(std::vector<u16> *fill){
+
+//ToDo: Figure out where it is generating 0-9, not a-b. Documentation says it should work fine, but here we are.
+void pageFaultSim::generateRandomVector(std::vector<u16>& toFill){
     std::random_device rd;
     std::mt19937 mtGen(rd());
-    std::uniform_int_distribution<u16> dist (1,this->virtualFrameNumber);
+    std::uniform_int_distribution<u16> dist(5, 20);//{1, this->virtualFrameNumber};
 
     auto gen = [&dist, &mtGen](){
         return dist(mtGen);
     };
 
-    std::ranges::generate(fill->begin(), fill->end(), gen);
-
-    this->currentIndex=0;
-
-    return 0;
+    std::ranges::generate(toFill, gen);
 }
 
 si pageFaultSim::setReferenceString(const std::vector<u16>& newRefString) {
@@ -129,21 +126,24 @@ si pageFaultSim::setReferenceString(const std::vector<u16>& newRefString) {
 
     this->pageReference[0] = newRefString;
 
+    this->currentIndex=0;
+
     return 0;
 }
 
 std::string pageFaultSim::generateReferenceString() {
 
     this->zeroOutPageReference();
-    this->generateRandomVector(&this->pageReference[0]);
+    this->currentIndex=0;
 
+    this->generateRandomVector(this->pageReference[0]);
 
     return this->getReferenceString();
 }
 
 std::string pageFaultSim::getReferenceString() {
     std::stringstream referenceStream;
-    std::ranges::for_each(this->pageReference[0], [&referenceStream](u16 &e){referenceStream << e;});
+    std::ranges::for_each(this->pageReference[0], [&referenceStream](const u16 &e){referenceStream << e;});
 
     return referenceStream.str();
 }
@@ -263,8 +263,6 @@ si pageFaultSim::stepAlgo(algoFunc algo) {
 }
 si pageFaultSim::OPT() {
 
-    u16 target=0;
-    u16 currentNum=0;
     u16 replaced=0;
     bool hit = false;
     std::vector<u16> searchSpace(pageReference.size()-3, 0);
