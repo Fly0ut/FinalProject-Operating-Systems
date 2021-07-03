@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="PublishConfigData" remoteFilesAllowedToDisappearOnAutoupload="false">
+    <serverData>
+      <paths name="RemoteDesktop (011d4bc1-61a1-4ce0-bd73-b76d31c39379)">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/tmp/tmp.dAhIwhUMve" local="$PROJECT_DIR$" />
+          </mappings>
+          <excludedPaths>
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-debug--flags" />
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-debug" />
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-prototype" />
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-release" />
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-debug--flags-remote" />
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-debug--flags-remote-1" />
+          </excludedPaths>
+        </serverdata>
+      </paths>
+      <paths name="RemoteDesktop (5810880a-e1d0-4722-b9f9-d225e3c44cf6)">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/tmp/tmp.tlHoqbrGtm" local="$PROJECT_DIR$" />
+          </mappings>
+          <excludedPaths>
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-debug--flags" />
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-debug" />
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-prototype" />
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-release" />
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-debug--flags-remote" />
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-debug--flags-remote-1" />
+          </excludedPaths>
+        </serverdata>
+      </paths>
+    </serverData>
+  </component>
+</project>
