@@ -499,11 +499,11 @@ si pageFaultSim::LFUSt() {
             pageReference[pageReference.size() - 1][currentIndex] = minn;
             searchSpace.erase(searchSpace.begin() + minnOffset);
 
-            for (int i = 0; i < searchSpace.size(); i++) {
-                std::cout << "i: " << i << ", at i: " << pageReference[i + 1][currentIndex] << ", minn: " << minn
-                          << "\n";
+            for (int i = 0; i < searchSpace.size()+1; i++) {
                 if (pageReference[i + 1][currentIndex] == minn) {
                     pageReference[i + 1][currentIndex] = pageReference[0][currentIndex];
+                    searchSpace.push_back(pageReference[i+1][currentIndex]);
+                    searchCount.push_back(1);
                 }
             }
 
