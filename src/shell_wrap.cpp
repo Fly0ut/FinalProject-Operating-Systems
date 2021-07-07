@@ -4,9 +4,11 @@
 
 #include <stdlib.h>
 #include <iostream>
+#include <QApplication>
 #include "../include/commands.h"
 #include "../include/typeAlias.h"
 #include "../include/pageFaultSim.h"
+#include "../qtTemplates/PageFaultDisplay.h"
 
 
 class shellWrap{
@@ -17,11 +19,15 @@ private:
     const char *fileSimHelp =  "0-Exit\n1-Select directory\n2-List directory content (first level)\n3-List directory content (all levels)\n4-Delete file\n5-Display file (hexadecimal view)\n6-Encrypt file (XOR with password)\n7-Decrypt file (XOR with password)\n";
     std::string args, args2, password, cliPrompt;
     si intArgs = -1;
+    si argc=0;
+    char** argv;
     pageFaultSim pageSim;
     shell shellFuncs;
 public:
-    shellWrap(){
+    shellWrap(si setArgc, char* setArgv[]){
         this->cliPrompt = "[]&";
+        argc = setArgc;
+        argv = setArgv;
         this->setDirHome();
         this->mainLoop();
     }
@@ -70,6 +76,9 @@ private:
                 break;
             case 7:
                 this->pageSim.pageFaultAlgoStepAPI(4);
+                break;
+            case 10:
+                this->startPageFaultGui();
                 break;
             default:
                 ;
@@ -226,7 +235,7 @@ private:
 
 
         const std::string  dirHomePrompt = "Do you want to try and set your HOME environmental variable as the working director? [Y/n]: ";
-        std::string response = "";
+        std::string response;
         std::cout << dirHomePrompt;
         std::cin >> response;
         std::cout << "\n";
@@ -244,6 +253,17 @@ private:
         this->promptConstr();
 
         return 1;
+    }
+
+    si startPageFaultGui(){
+
+        QApplication a(argc, argv);
+        PageFaultDisplay pageGUI;
+        pageGUI.setPageSim(&this->pageSim);
+
+        pageGUI.show();
+
+        return a.exec();
     }
 
 };

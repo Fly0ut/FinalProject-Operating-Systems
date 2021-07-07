@@ -6,6 +6,7 @@
 #define FINALPROJECT_PAGEFAULTSIM_H
 #include "typeAlias.h"
 #include <vector>
+#include <iomanip>
 #include <list>
 #include <iostream>
 #include <functional>
@@ -23,6 +24,8 @@ private:
     //Page reference vector layout
     //Rerefence String, Phyical frame 0.. Phyical Frame N, Page faults, Victim frames.
     std::vector< std::vector<u16> > pageReference;
+    std::vector<u16> referenceRow;
+    std::vector<std::vector<std::vector<u16>>> pageReferenceTime;
     u16 currentIndex=0, physicalFrameNumber=4, virtualFrameNumber=10, referenceSize=13;
 
 public:
@@ -32,12 +35,14 @@ public:
     si homework5Demo();
 
     si pageFaultAlgoStepAPI(si algoKey);
+    si pageFaultAlgoPopAPI(si algoKey);
 
     si setReferenceString(const std::vector<u16>& newRefString);
     std::string  getReferenceString();
 
     //Generate pageReference
     si zeroOutPageReference();
+    si resetSim();
 
     si stdTemplateHW5();
 
@@ -50,8 +55,13 @@ public:
     //Outputs
     si printReference();
 
+
+
     template<class algoFunc>
     si stepAlgo(algoFunc algo);
+    template<class algoFunc>
+    si algoPopulate(algoFunc algo);
+
 
     //Different page replacement algorithms
     si FIFO();

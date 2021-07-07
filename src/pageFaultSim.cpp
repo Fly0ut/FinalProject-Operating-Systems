@@ -6,88 +6,19 @@
 
     pageFaultSim::pageFaultSim(){
     pageFaultSim::zeroOutPageReference();
-}
-
-si pageFaultSim::pageFaultAlgoStepAPI(si algoKey) {
-
-    std::function<si()> test;
-    switch (algoKey) {
-        case 1:
-            test = std::bind(&pageFaultSim::FIFOSt, this);
-            this->stepAlgo(test);
-            break;
-        case 2:
-            test = std::bind(&pageFaultSim::OPTSt, this);
-            this->stepAlgo(test);
-            break;
-        case 3:
-            test = std::bind(&pageFaultSim::LRUSt, this);
-            this->stepAlgo(test);
-            break;
-        case 4:
-            test = std::bind(&pageFaultSim::LFUSt, this);
-            this->stepAlgo(test);
-            break;
-        default:
-            ;
-    }
-
-    return 0;
-}
-
-si pageFaultSim::homework5Demo() {
-    //Start FIFO Demo
-    std::cout << "1. TextBook Reading FIFO algorithm\n";
-    this->stdTemplateHW5();
-    std::cout << "Before:\n";
-    this->printReference();
-    this->FIFO();
-    std::cout << "After:\n";
-    this->printReference();
-    std::cout << "\n********************\n";
-    //End FIFO Demo
-
-    //OPT Demo
-    std::cout << "2. OPT page replacement algorithm.\n";
-    this->stdTemplateHW5();
-    std::cout << "Before:\n";
-    this->printReference();
-    this->OPT();
-    std::cout << "After:\n";
-    this->printReference();
-    std::cout << "\n*************************************\n";
-    //End OPT Demo
-
-   //Start LRU Demo
-    std::cout << "3. LRU page replacement algorithm.\n";
-    this->stdTemplateHW5();
-    std::cout << "Before:\n";
-    this->printReference();
-    this->LRU();
-    std::cout << "After:\n";
-    this->printReference();
-    std::cout << "\n*******************\n";
-    //End LRU Demo
-    //Start LFU Demo
-    std::cout << "4. LFU page replacement algorithm.\n";
-    this->stdTemplateHW5();
-    std::cout << "Before:\n";
-    this->printReference();
-    this->LFU();
-    std::cout << "After:\n";
-    this->printReference();
-    std::cout << "\n*********************\n";
-    //End LFU Demo
-
-
-    return 1;
+    this->referenceRow.resize(this->referenceSize, 0);
 }
 
 si pageFaultSim::zeroOutPageReference() {
     pageReference.clear();
     this->currentIndex = 0;
     pageReference.resize(this->physicalFrameNumber+3, std::vector<u16>(this->referenceSize, 0));
+    pageReferenceTime.resize(this->referenceSize, std::vector<std::vector<u16>>(this->physicalFrameNumber+3, std::vector<u16>(this->referenceSize, 0)));
     return  0;
+}
+
+si pageFaultSim::resetSim() {
+    this->setReferenceString(this->referenceRow);
 }
 
 si pageFaultSim::stdTemplateHW5() {
@@ -105,11 +36,10 @@ si pageFaultSim::stdTemplateHW5() {
 }
 
 
-//ToDo: Figure out where it is generating 0-9, not a-b. Documentation says it should work fine, but here we are.
 void pageFaultSim::generateRandomVector(std::vector<u16>& toFill){
     std::random_device rd;
     std::mt19937 mtGen(rd());
-    std::uniform_int_distribution<u16> dist(5, 20);//{1, this->virtualFrameNumber};
+    std::uniform_int_distribution<u16> dist(1, this->virtualFrameNumber);
 
     auto gen = [&dist, &mtGen](){
         return dist(mtGen);
@@ -120,11 +50,10 @@ void pageFaultSim::generateRandomVector(std::vector<u16>& toFill){
 
 si pageFaultSim::setReferenceString(const std::vector<u16>& newRefString) {
 
-    this->referenceSize = newRefString.size();
-
+    this->referenceRow = newRefString;
+    this->referenceSize = this->referenceRow.size();
     this->zeroOutPageReference();
-
-    this->pageReference[0] = newRefString;
+    this->pageReference[0] = this->referenceRow;
 
     this->currentIndex=0;
 
@@ -132,50 +61,92 @@ si pageFaultSim::setReferenceString(const std::vector<u16>& newRefString) {
 }
 
 std::string pageFaultSim::generateReferenceString() {
-
-    this->zeroOutPageReference();
-    this->currentIndex=0;
-
-    this->generateRandomVector(this->pageReference[0]);
+    this->generateRandomVector(this->referenceRow);
+    this->setReferenceString(this->referenceRow);
 
     return this->getReferenceString();
 }
 
 std::string pageFaultSim::getReferenceString() {
     std::stringstream referenceStream;
-    std::ranges::for_each(this->pageReference[0], [&referenceStream](const u16 &e){referenceStream << e;});
+    std::ranges::for_each(this->pageReference[0], [&referenceStream](const u16 &e){referenceStream << e << ", ";});
 
-    return referenceStream.str();
+    return referenceStream.str().erase(referenceStream.str().size()-2, 2);
 }
 
 si pageFaultSim::generatePageReference(u16 reference_length,u16 virtual_frame_number, u16 phyical_frame_number) {
-
     this->zeroOutPageReference();
 
     size_t height = virtual_frame_number+3;
     size_t width=reference_length;
     
     this->pageReference.resize(height, std::vector<u16>(width, 0));
-
     this->physicalFrameNumber = phyical_frame_number;
 
     return 0;
 }
 
 si pageFaultSim::printReference() {
-    auto printU16Vec = [](const std::vector<u16>& v)
+
+    std::stringstream u16VecOut;
+
+    auto printU16Vec = [&u16VecOut](const std::vector<u16>& v)
         {
             std::ranges::for_each(v,
-                          [](const u16& n) {
-                                std::cout << n;
+                          [&u16VecOut](const u16& n) {
+                                u16VecOut << std::setw(3) << "|" << std::setw(2) << n/*-1*/ <<"|";
                          }
             );
-            std::cout<<"\n";
+            u16VecOut <<"\n";
         };
     std::ranges::for_each(this->pageReference, printU16Vec);
 
+    std::cout << u16VecOut.rdbuf();
+
     return 0;
 }
+
+template<class algoFunc>
+si pageFaultSim::stepAlgo(algoFunc algo) {
+
+
+    this->printReference();
+
+    std::string theVoid;
+
+    while(this->currentIndex<this->pageReference[0].size()) {
+        algo();
+        this->printReference();
+        std::cin >> theVoid;
+        std::ranges::copy(this->pageReference.begin(), this->pageReference.end(), std::back_inserter(this->pageReferenceTime[this->currentIndex]));
+        this->currentIndex++;
+        theVoid.clear();
+    }
+
+    this->zeroOutPageReference();
+
+    return 0;
+}
+
+template<class algoFunc>
+si pageFaultSim::algoPopulate(algoFunc algo) {
+
+    while(this->currentIndex<this->pageReference[0].size()) {
+        algo();
+        std::ranges::copy(this->pageReference.begin(), this->pageReference.end(), std::back_inserter(this->pageReferenceTime[this->currentIndex]));
+        this->currentIndex++;
+    }
+
+    this->zeroOutPageReference();
+
+    return 0;
+}
+
+/*
+//////////////////////////
+//Start Algorithms////////
+//////////////////////////
+*/
 
 si pageFaultSim::FIFO() {
     bool hit = false;
@@ -212,8 +183,8 @@ si pageFaultSim::FIFOSt() {
     si ii=0;
     static std::list<u16> line;
 
-
     if(currentIndex==0){
+        line.clear();
     for(si i=0;i<pageReference.size()-3; i++) {
         line.push_front(pageReference[i+1][currentIndex-1]);
     }
@@ -233,34 +204,11 @@ si pageFaultSim::FIFOSt() {
             ii++;
         }
 
-        this->currentIndex++;
-
-        if(currentIndex>=this->referenceSize){
-            line.clear();
-        }
-
         return 0;
 }
 
-template<class algoFunc>
-si pageFaultSim::stepAlgo(algoFunc algo) {
 
 
-    this->printReference();
-
-    std::string theVoid;
-
-    while(this->currentIndex<this->pageReference[0].size()) {
-        algo();
-        this->printReference();
-        std::cin >> theVoid;
-        theVoid.clear();
-    }
-
-    this->zeroOutPageReference();
-
-    return 0;
-}
 si pageFaultSim::OPT() {
 
     u16 replaced=0;
@@ -362,8 +310,6 @@ si pageFaultSim::OPTSt() {
         //Flip failed frame status bit.
         pageReference[pageReference.size()-2][currentIndex] = hit ? 0 : 1;
 
-        this->currentIndex++;
-
         return 0;
 }
 
@@ -463,8 +409,6 @@ si pageFaultSim::LRUSt() {
         //Flip failed frame status bit.
         pageReference[pageReference.size()-2][currentIndex] = hit ? 0 : 1;
 
-        this->currentIndex++;
-
         return 0;
 }
 
@@ -514,48 +458,172 @@ si pageFaultSim::LFU() {
     return 0;
 }
 
+//ToDo: make special case for zero and done.
 si pageFaultSim::LFUSt() {
     bool hit = false;
     size_t minnOffset;
-    std::vector<u16> searchSpace;
-    std::vector<u16> searchCount;
+    static std::vector<u16> searchSpace;
+    static std::vector<u16> searchCount;
     using nextIter = std::vector<u16>::iterator;
+    std::vector<std::vector<u16>> search(3, std::vector<u16>(0, 0));
     nextIter found;
     nextIter minnPos;
     u16 minn;
+
+    if(currentIndex==0){
+        searchSpace.clear();
+        searchCount.clear();
+    }
 
         for(si i=0;i<pageReference.size()-3; i++) {
             pageReference[i+1][currentIndex] = pageReference[i+1][currentIndex-1];
             found = std::ranges::find(searchSpace, pageReference[i+1][currentIndex]);
             if(found != searchSpace.end()) {
                 searchCount.at(std::distance(searchSpace.begin(), found))++;
-            } else {
+            } else if(pageReference[i+1][currentIndex] != 0){
                 searchSpace.push_back(pageReference[i+1][currentIndex]);
                 searchCount.push_back(1);
             }
             hit = (pageReference[i+1][currentIndex] == pageReference[0][currentIndex]) || hit;
         }
-        if(!hit) {
+    if(searchSpace.size() < physicalFrameNumber) {
+        pageReference[searchSpace.size()+1][currentIndex] = pageReference[0][currentIndex];
+    }
+    else {
+        if (!hit) {
             minnPos = std::ranges::min_element(searchCount);
+            int minnCount = *minnPos;
             minnOffset = std::distance(searchCount.begin(), minnPos);
             searchCount.erase(minnPos);
             minn = searchSpace.at(minnOffset);
-            pageReference[pageReference.size()-1][currentIndex] = minn;
-            searchSpace.erase(searchSpace.begin()+minnOffset);
-            for(int i=0;i<searchSpace.size();i++) {
-                if(pageReference[i+1][currentIndex] == minn) {
-                    pageReference[i+1][currentIndex] = pageReference[0][currentIndex];
+            pageReference[pageReference.size() - 1][currentIndex] = minn;
+            searchSpace.erase(searchSpace.begin() + minnOffset);
+
+            for (int i = 0; i < searchSpace.size(); i++) {
+                std::cout << "i: " << i << ", at i: " << pageReference[i + 1][currentIndex] << ", minn: " << minn
+                          << "\n";
+                if (pageReference[i + 1][currentIndex] == minn) {
+                    pageReference[i + 1][currentIndex] = pageReference[0][currentIndex];
                 }
             }
+
+            std::cout << "Min: " << minn << ",  min offset: " << minnOffset << ", min count: " << minnCount
+                      << ", searchSpace size: " << searchSpace.size() << "\n";
         }
+    }
 
         pageReference[pageReference.size()-2][currentIndex] = hit ? 0 : 1;
-
-        this->currentIndex++;
 
         return 0;
 }
 
+/*
+//////////////////////
+//End Algorithms//////
+/////////////////////
+*/
+
 u16 pageFaultSim::getReferenceSize() const {
     return this->referenceSize;
+}
+
+si pageFaultSim::pageFaultAlgoStepAPI(si algoKey) {
+
+    std::function<si()> test;
+    switch (algoKey) {
+        case 1:
+            test = std::bind(&pageFaultSim::FIFOSt, this);
+            this->stepAlgo(test);
+            break;
+        case 2:
+            test = std::bind(&pageFaultSim::OPTSt, this);
+            this->stepAlgo(test);
+            break;
+        case 3:
+            test = std::bind(&pageFaultSim::LRUSt, this);
+            this->stepAlgo(test);
+            break;
+        case 4:
+            test = std::bind(&pageFaultSim::LFUSt, this);
+            this->stepAlgo(test);
+            break;
+        default:
+            ;
+    }
+
+    return 0;
+}
+
+si pageFaultSim::pageFaultAlgoPopAPI(si algoKey) {
+
+    std::function<si()> test;
+    switch (algoKey) {
+        case 1:
+            test = std::bind(&pageFaultSim::FIFOSt, this);
+            this->algoPopulate(test);
+            break;
+        case 2:
+            test = std::bind(&pageFaultSim::OPTSt, this);
+            this->algoPopulate(test);
+            break;
+        case 3:
+            test = std::bind(&pageFaultSim::LRUSt, this);
+            this->algoPopulate(test);
+            break;
+        case 4:
+            test = std::bind(&pageFaultSim::LFUSt, this);
+            this->algoPopulate(test);
+            break;
+        default:
+            ;
+    }
+
+    return 0;
+}
+
+si pageFaultSim::homework5Demo() {
+    //Start FIFO Demo
+    std::cout << "1. TextBook Reading FIFO algorithm\n";
+    this->stdTemplateHW5();
+    std::cout << "Before:\n";
+    this->printReference();
+    this->FIFO();
+    std::cout << "After:\n";
+    this->printReference();
+    std::cout << "\n********************\n";
+    //End FIFO Demo
+
+    //OPT Demo
+    std::cout << "2. OPT page replacement algorithm.\n";
+    this->stdTemplateHW5();
+    std::cout << "Before:\n";
+    this->printReference();
+    this->OPT();
+    std::cout << "After:\n";
+    this->printReference();
+    std::cout << "\n*************************************\n";
+    //End OPT Demo
+
+    //Start LRU Demo
+    std::cout << "3. LRU page replacement algorithm.\n";
+    this->stdTemplateHW5();
+    std::cout << "Before:\n";
+    this->printReference();
+    this->LRU();
+    std::cout << "After:\n";
+    this->printReference();
+    std::cout << "\n*******************\n";
+    //End LRU Demo
+    //Start LFU Demo
+    std::cout << "4. LFU page replacement algorithm.\n";
+    this->stdTemplateHW5();
+    std::cout << "Before:\n";
+    this->printReference();
+    this->LFU();
+    std::cout << "After:\n";
+    this->printReference();
+    std::cout << "\n*********************\n";
+    //End LFU Demo
+
+    return 1;
 }

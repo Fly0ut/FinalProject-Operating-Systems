@@ -433,7 +433,7 @@
         //Running this here to make sure the compile of the template function doesn't slow it down.
         this->char_prt_xor_256_bytes_normal(keyPrep, fakeFile);
         auto f2start = std::chrono::high_resolution_clock::now();
-        //Need to include data chunking/parsing for each algorithm since it is indicative of compute time i use.
+        //Need to include pageData chunking/parsing for each algorithm since it is indicative of compute time i use.
         //i.e rep and tail subsetting for the low level way.
         key = this->prepLength(key, fakeFile.size());
         //High level xor

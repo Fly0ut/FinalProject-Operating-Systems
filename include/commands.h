@@ -78,6 +78,5 @@ public:
 
     si sanatizeToNums(std::string dirtySting);
 
-
 };
 #endif //FINALPROJECT_COMMANDS_H
