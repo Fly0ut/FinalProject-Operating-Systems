@@ -48,7 +48,7 @@ public:
 
     void generateRandomVector(std::vector<u16>& toFill);
 
-    std::string generateReferenceString();
+    std::string generateReferenceString(int i);
 
     si generatePageReference(u16 reference_length, u16 virtual_frame_number, u16 phyical_frame_number);
 

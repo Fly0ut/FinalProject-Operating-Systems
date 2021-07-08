@@ -22,7 +22,7 @@ set(REQUIRED_LIBS_QUALIFIED QT5::CORE)
 include_directories(${PROJECT_SOURCE_DIR}/include)
 
 #Sources
-add_executable(FinalProject src/main.cpp src/shell_wrap.cpp src/pageFaultSim.cpp src/commands.cpp qtTemplates/PageFaultDisplay.ui qtTemplates/PageFaultDisplay.cpp qtTemplates/pageFaultModel.cpp qtTemplates/pageFaultModel.h)
+add_executable(FinalProject src/main.cpp src/shell_wrap.cpp src/pageFaultSim.cpp src/commands.cpp qtTemplates/PageFaultDisplay.ui qtTemplates/PageFaultDisplay.cpp)
 
 #QT links
 target_link_libraries(FinalProject Qt5::Core)

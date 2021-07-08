@@ -60,7 +60,10 @@ si pageFaultSim::setReferenceString(const std::vector<u16>& newRefString) {
     return 0;
 }
 
-std::string pageFaultSim::generateReferenceString() {
+std::string pageFaultSim::generateReferenceString(int i) {
+    this->referenceSize=i;
+    this->referenceRow.resize(i, 0);
+    this->zeroOutPageReference();
     this->generateRandomVector(this->referenceRow);
     this->setReferenceString(this->referenceRow);
 
@@ -122,8 +125,8 @@ si pageFaultSim::stepAlgo(algoFunc algo) {
         this->currentIndex++;
         theVoid.clear();
     }
-
     this->zeroOutPageReference();
+    this->setReferenceString(this->referenceRow);
 
     return 0;
 }
@@ -483,8 +486,8 @@ si pageFaultSim::LFUSt() {
             } else if(pageReference[i+1][currentIndex] != 0){
                 searchSpace.push_back(pageReference[i+1][currentIndex]);
                 searchCount.push_back(1);
+                hit = true;
             }
-            hit = (pageReference[i+1][currentIndex] == pageReference[0][currentIndex]) || hit;
         }
     if(searchSpace.size() < physicalFrameNumber) {
         pageReference[searchSpace.size()+1][currentIndex] = pageReference[0][currentIndex];

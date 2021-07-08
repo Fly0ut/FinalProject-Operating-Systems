@@ -60,7 +60,14 @@ private:
 
                 break;
             case 2:
-                std::cout << "Reference String updated to: " << this->pageSim.generateReferenceString() << "\n";
+                std::cout << "Enter reference string length: ";
+                std::cin >> args;
+                std::cout << std::endl;
+                if(!this->shellFuncs.sanatizeToNums(args)){
+                    std::cout << "Error: bad input : " << args;
+                } else {
+                    std::cout << "Reference String updated to: " << this->pageSim.generateReferenceString(std::stoi(args)) << "\n";
+                }
                 break;
             case 3:
                 std::cout << "current Reference String is: " << this->pageSim.getReferenceString() << "\n";
@@ -81,7 +88,7 @@ private:
                 this->startPageFaultGui();
                 break;
             default:
-                ;
+                std::cout << "Not a valid command!" << std::endl;
         }
 
 
