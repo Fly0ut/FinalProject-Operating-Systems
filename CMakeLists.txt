@@ -8,7 +8,7 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTORCC ON)
 
-#QT packages neeeded
+#QT packages needed
 find_package(Qt5Core REQUIRED)
 find_package(Qt5Widgets REQUIRED)
 find_package(Qt5Quick REQUIRED)
@@ -22,7 +22,8 @@ set(REQUIRED_LIBS_QUALIFIED QT5::CORE)
 include_directories(${PROJECT_SOURCE_DIR}/include)
 
 #Sources
-add_executable(FinalProject src/main.cpp src/shell_wrap.cpp src/pageFaultSim.cpp src/commands.cpp qtTemplates/PageFaultDisplay.ui qtTemplates/PageFaultDisplay.cpp)
+add_executable(FinalProject src/main.cpp src/shell_wrap.cpp src/pageFaultSim.cpp src/commands.cpp qtTemplates/PageFaultDisplay.ui qtTemplates/PageFaultDisplay.cpp src/pageAlgorithms.cpp)
+#add_executable(FinalProject src/main.cpp src/shell_wrap.cpp src/pageFaultSim.cpp src/commands.cpp src/pageAlgorithms.cpp)
 
 #QT links
 target_link_libraries(FinalProject Qt5::Core)

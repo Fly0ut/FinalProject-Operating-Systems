@@ -402,8 +402,7 @@
             std::getline(outStream, readBuffer);
             std::cout << readBuffer;
         }
-
-        0;
+        return 0;
     }
 
     si shell::cyptTimer() {

@@ -2,8 +2,9 @@
 // Created by fly0ut on 6/22/21.
 //
 
-#include <stdlib.h>
+#include <cstdlib>
 #include <iostream>
+#include <limits>
 #include <QApplication>
 #include "../include/commands.h"
 #include "../include/typeAlias.h"
@@ -17,18 +18,17 @@ private:
     const char *promptPostFix = "]&";
     const char *pageSimHelp = "1-Read reference string\n2-Generate reference string\n3-Display current reference string\n4-Simulate FIFO\n5-Simulate OPT\n6-simulate LRU\n7-Simulate LFU\n";
     const char *fileSimHelp =  "0-Exit\n1-Select directory\n2-List directory content (first level)\n3-List directory content (all levels)\n4-Delete file\n5-Display file (hexadecimal view)\n6-Encrypt file (XOR with password)\n7-Decrypt file (XOR with password)\n";
-    std::string args, args2, password, cliPrompt;
+    const char *algoPreAmble = "Starting to run demand page simulation using the algorithm ";
+    std::string args, args2, password;
+    std::string cliPrompt = "[]&";
     si intArgs = -1;
     si argc=0;
     char** argv;
     pageFaultSim pageSim;
     shell shellFuncs;
 public:
-    shellWrap(si setArgc, char* setArgv[]){
-        this->cliPrompt = "[]&";
-        argc = setArgc;
-        argv = setArgv;
-        this->setDirHome();
+    shellWrap(si setArgc, char* setArgv[]) : argc(setArgc), argv(setArgv){
+        //this->setDirHome();
         this->mainLoop();
     }
 private:
@@ -41,6 +41,7 @@ private:
             args2.clear();
             password.clear();
         }
+        std::cout << "Bye, bye!" << std::endl;
         return 0;
     }
 
@@ -51,17 +52,26 @@ private:
             case 1:
                 std::cout << "Input reference string with [0-9], up to 20 digits\n";
                 std::cin >> args;
+                if(args.length() > std::to_string(std::numeric_limits<u16>::max()).length() || std::stol(args) > (int)(std::numeric_limits<u16>::max())){
+                    std::cout << "Error: unsigned short can only hold: " << std::numeric_limits<u16>::max() << " and input was: " << args << "!\nWhat are you doing?.....\n";
+                    break;
+                }
                 std::cout << "\n";
                 if(!this->shellFuncs.sanatizeToNums(args)){
                     std::cout << "Error: bad input : " << args;
                 } else{
                     this->pageSim.setReferenceString(std::vector<u16>(args.begin(), args.end()));
+                    break;
                 }
-
                 break;
             case 2:
                 std::cout << "Enter reference string length: ";
                 std::cin >> args;
+
+                if( args.length() > std::to_string(std::numeric_limits<u16>::max()).length() || std::stol(args) > (int)(std::numeric_limits<u16>::max())){
+                    std::cout << "Error: unsigned short can only hold: " << std::numeric_limits<u16>::max() << " and input was: " << args << "!\nWhat are you doing?.....\n";
+                    break;
+                }
                 std::cout << std::endl;
                 if(!this->shellFuncs.sanatizeToNums(args)){
                     std::cout << "Error: bad input : " << args;
@@ -73,15 +83,19 @@ private:
                 std::cout << "current Reference String is: " << this->pageSim.getReferenceString() << "\n";
                 break;
             case 4:
+                std::cout << this->algoPreAmble << "FIFO." << std::endl;
                 this->pageSim.pageFaultAlgoStepAPI(1);
                 break;
             case 5:
+                std::cout << this->algoPreAmble << "OPT." << std::endl;
                 this->pageSim.pageFaultAlgoStepAPI(2);
                 break;
             case 6:
+                std::cout << this->algoPreAmble << "LRU." << std::endl;
                 this->pageSim.pageFaultAlgoStepAPI(3);
                 break;
             case 7:
+                std::cout << this->algoPreAmble << "LFU." << std::endl;
                 this->pageSim.pageFaultAlgoStepAPI(4);
                 break;
             case 10:
@@ -90,13 +104,10 @@ private:
             default:
                 std::cout << "Not a valid command!" << std::endl;
         }
-
-
         return 1;
     }
 
     si shellCallMap(si commandIndex){
-
         switch (commandIndex) {
             case 0:
                 std::cout << "Bye, bye!\n";
@@ -142,11 +153,6 @@ private:
                 std::cout << password << "\n";
                 this->shellFuncs.xorDecrypt(args, args2, password);
                 break;
-            case 1337:
-                std::cout << "Running demo\n";
-                //this->demoFINALPROJECT();
-                std::cout << "Demo done\n";
-                break;
             case 7133:
                 std::cout << "Running timer\n";
                 this->cryptTimer();
@@ -164,7 +170,6 @@ private:
     }
 
     si demoFINALPROJECT(){
-
         args = "/home/fly0ut/Desktop";
         this->shellCallMap(1);
 
@@ -263,14 +268,13 @@ private:
     }
 
     si startPageFaultGui(){
-
         QApplication a(argc, argv);
         PageFaultDisplay pageGUI;
         pageGUI.setPageSim(&this->pageSim);
 
         pageGUI.show();
 
-        return a.exec();
+        return QApplication::exec();
     }
 
 };

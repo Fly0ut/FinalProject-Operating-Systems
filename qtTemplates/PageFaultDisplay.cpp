@@ -16,7 +16,6 @@ PageFaultDisplay::PageFaultDisplay(QWidget *parent) :
     //QObject::connect(ui->pushButton_2, SIGNAL(clicked(bool)), this, SLOT(void));
     //ToDo: Go forward in the simulation.
     //QObject::connect(ui->pushButton_2, SIGNAL(clicked(bool)), this, SLOT(void));
-
 }
 
 PageFaultDisplay::~PageFaultDisplay() {
@@ -39,6 +38,11 @@ void PageFaultDisplay::setupUi(PageFaultDisplay *setPageFaultDisplay)
     gridLayout->setContentsMargins(0, 0, 0, 0);
     tableView = new QTableView(gridLayoutWidget);
     tableView->setObjectName(QString::fromUtf8("tableView"));
+
+    model = new pageFaultModel;
+    model->setPageSim(this->pageSim);
+
+    tableView->setModel(model);
 
     gridLayout->addWidget(tableView, 0, 1, 1, 1);
 
@@ -140,8 +144,8 @@ void PageFaultDisplay::retranslateUi(PageFaultDisplay *setPageFaultDisplay)
 QRadioButton* PageFaultDisplay::algoSwitch() {
     QList<QRadioButton *> algoList= this->findChildren<QRadioButton *>();
 
-    if(algoList.size() == 0) {
-        qDebug() << algoList.size() << "\n";
+    if(algoList.empty()) {
+        qDebug() << "Error: not children radio buttons found.\n";
         return nullptr;
         //May want to exit with error instead of returning a null pointer instead of a non-valid pointer.
         //This is why rust is soo much better.  If it was rust I could just return a result<QRadioButton, Error>.
@@ -150,17 +154,19 @@ QRadioButton* PageFaultDisplay::algoSwitch() {
     else {
         qDebug() << algoList.size() << "\n";
     }
-
     //Make sure this works. Doesn't look like it works.
     QList<QRadioButton *>::iterator algoButIter = std::find_if(algoList.begin(), algoList.end(), [](QRadioButton *e){ return e->isChecked();});
     return *algoButIter;
 }
 
 int PageFaultDisplay::algoRun() {
-    //ToDo: fix segfault here.
     QRadioButton* seletedRadioOpt =  algoSwitch();
     if(seletedRadioOpt == nullptr){
-        qDebug() << "Error Null pointer\n";
+        qDebug() << "Error: QRadiobutton from switch is  a Null pointer\n";
+        return errno;
+    }
+    if(this->pageSim == nullptr) {
+        qDebug() << "Error: page simulation is a null pointer";
         return errno;
     }
 
@@ -173,16 +179,22 @@ int PageFaultDisplay::algoRun() {
         qDebug() << "triggering FIFO\n";
     }
     else if(seletedOpt == "OPT") {
-        //this->pageSim->pageFaultAlgoStepAPI(2);
+        this->pageSim->pageFaultAlgoStepAPI(2);
+        qDebug() << "triggering OPT\n";
     }
     else if(seletedOpt == "LRU") {
-        //this->pageSim->pageFaultAlgoStepAPI(3);
+        this->pageSim->pageFaultAlgoStepAPI(3);
+        qDebug() << "triggering LRU\n";
     }
     else if(seletedOpt == "LFU") {
-        //this->pageSim->pageFaultAlgoStepAPI(4);
+        this->pageSim->pageFaultAlgoStepAPI(4);
+        qDebug() << "triggering LFU\n";
     } else{
         qDebug() << "Error: not valid input for gui select: " << seletedOpt.c_str()<< "\n" << seletedRadioOpt->text();
+        return 0;
     }
+
+    model->loadFromPageSim();
 
     return 0;
 }

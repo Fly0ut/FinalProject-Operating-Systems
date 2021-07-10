@@ -28,6 +28,7 @@
 #include <QtWidgets/QVBoxLayout>
 #include <QtWidgets/QWidget>
 #include "../include/pageFaultSim.h"
+#include "pageFaultModel.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -59,6 +60,7 @@ public:
     QMenuBar *menubar;
     QMenu *menuPage_Fault_Simulation;
     QStatusBar *statusbar;
+    pageFaultModel *model;
     //QAction *action;
     pageFaultSim *pageSim;
 
@@ -71,11 +73,7 @@ private slots:
     int algoRun();
 public:
     void setPageSim(pageFaultSim *setSim);
-
-
-
     ~PageFaultDisplay() override;
-
 private:
     Ui::PageFaultDisplay *ui;
 };

@@ -4,137 +4,147 @@
 
 #include "pageAlgorithms.h"
 
-
-void FIFO::startUp() const{
-
-}
-void FIFO::algo() const{
-
-}
-void FIFO::cleanUp() const{
-
+void pageAlgorithms::pushPageRef() {
+    for(si i=0;i<*this->physicalFrameNumber;i++){
+        this->pageReference[i+1][*currentIndex] = this->workingPage[i];
+    }
 }
 
-void OPT::startUp() const{
-
-}
-void OPT::algo() const{
-
-}
-void OPT::cleanUp() const{
-
+void FIFO::startUp() {
+    this->workingPage.resize(*this->physicalFrameNumber, 0);
 }
 
-void LFU::startUp() const{
-
+void FIFO::algo()  {
+    bool hit = false;
+    hit = (std::ranges::find(workingPage.begin(), workingPage.end(), pageReference[0][*currentIndex]) != workingPage.end());
+    //Flip failed frame status bit.
+    pageReference[pageReference.size()-2][*currentIndex] = hit ? 0 : 1;
+    if (!hit) {
+        pageReference[pageReference.size()-1][*currentIndex] = this->workingPage.back();
+        this->workingPage.pop_back();
+        this->workingPage.emplace(workingPage.begin(), pageReference[0][*currentIndex]);
+    }
 }
-void LFU::algo() const{
+
+void FIFO::cleanUp() {
+    workingPage.clear();
+}
+
+void OPT::startUp() {
+    this->searchSpace.resize(2, std::vector<u16>(*this->physicalFrameNumber, 0));
+    std::ranges::fill(searchSpace[1], std::numeric_limits<u16>::max()-(this->overFlowProtect));
+}
+
+void OPT::algo() {
     bool hit = false;
     size_t minnOffset;
-    static std::vector<u16> searchSpace;
-    static std::vector<u16> searchCount;
     using nextIter = std::vector<u16>::iterator;
-    std::vector<std::vector<u16>> search(3, std::vector<u16>(0, 0));
     nextIter found;
     nextIter minnPos;
-    u16 minn;
 
-    if(currentIndex==0){
-        searchSpace.clear();
-        searchCount.clear();
-    }
+    found = std::ranges::find(searchSpace[0], pageReference[0][*currentIndex]);
+    if(found != searchSpace[0].end()) {
+        searchSpace[1][std::distance(searchSpace[0].begin(), found)] = std::ranges::distance(pageReference[0].begin()+*currentIndex,
+                                                           std::ranges::find(pageReference[0].begin()+*currentIndex+1, pageReference[0].end(), pageReference[0][*currentIndex]));
+        hit = true;
+    }else {
+        minnPos = std::ranges::max_element(searchSpace[1]);
+        minnOffset = std::distance(searchSpace[1].begin(), minnPos);
 
-    for(si i=0;i<pageReference.size()-3; i++) {
-        pageReference[i+1][currentIndex] = pageReference[i+1][currentIndex-1];
-        found = std::ranges::find(searchSpace, pageReference[i+1][currentIndex]);
-        if(found != searchSpace.end()) {
-            searchCount.at(std::distance(searchSpace.begin(), found))++;
-        } else if(pageReference[i+1][currentIndex] != 0){
-            searchSpace.push_back(pageReference[i+1][currentIndex]);
-            searchCount.push_back(1);
-        }
-        hit = (pageReference[i+1][currentIndex] == pageReference[0][currentIndex]) || hit;
+        pageReference[pageReference.size()-1][*currentIndex] = searchSpace[0].at(minnOffset);
+
+        searchSpace[0][minnOffset] = pageReference[0][*currentIndex];
+        searchSpace[1][minnOffset] = std::ranges::distance(pageReference[0].begin()+*currentIndex,
+                                                           std::ranges::find(pageReference[0].begin()+*currentIndex+1, pageReference[0].end(), pageReference[0][*currentIndex]));
     }
-    if(searchSpace.size() < physicalFrameNumber) {
-        pageReference[searchSpace.size()+1][currentIndex] = pageReference[0][currentIndex];
+    std::ranges::transform(searchSpace[1].begin(),searchSpace[1].end(), searchSpace[1].begin(), [](u16 e){ if(e==0){exit(errno);} return e-1;});
+    pageReference[pageReference.size()-2][*currentIndex] = hit ? 0 : 1;
+}
+
+void OPT::pushPageRef() {
+    for(si i=0;i<*this->physicalFrameNumber;i++){
+        this->pageReference[i+1][*currentIndex] = this->searchSpace[0][i];
+    }
+}
+
+void OPT::cleanUp() {
+    this->workingPage.clear();
+}
+
+void LFU::pushPageRef() {
+    for(si i=0;i<*this->physicalFrameNumber;i++){
+        this->pageReference[i+1][*currentIndex] = this->searchSpace[0][i];
+    }
+}
+
+void LFU::startUp() {
+    this->searchSpace.resize(2, std::vector<u16>(*this->physicalFrameNumber, 0));
+}
+
+void LFU::algo() {
+    bool hit = false;
+    size_t minnOffset;
+    using nextIter = std::vector<u16>::iterator;
+    nextIter found;
+    nextIter minnPos;
+
+    found = std::ranges::find(searchSpace[0], pageReference[0][*currentIndex]);
+    if(found != searchSpace[0].end()) {
+        searchSpace[1][std::distance(searchSpace[0].begin(), found)]++;
+        hit = true;
+    }else {
+        minnPos = std::ranges::min_element(searchSpace[1]);
+        minnOffset = std::distance(searchSpace[1].begin(), minnPos);
+
+        pageReference[pageReference.size()-1][*currentIndex] = searchSpace[0].at(minnOffset);
+
+        searchSpace[0][minnOffset] = pageReference[0][*currentIndex];
+        searchSpace[1][minnOffset] = 1;
+    }
+    pageReference[pageReference.size()-2][*currentIndex] = hit ? 0 : 1;
+}
+
+void LFU::cleanUp() {
+    this->searchSpace.clear();
+}
+
+void LRU::startUp() {
+    this->searchSpace.resize(2, std::vector<u16>(*this->physicalFrameNumber, 0));
+    std::ranges::fill(searchSpace[1], std::numeric_limits<u16>::max()-(this->overFlowProtect));
+}
+
+void LRU::pushPageRef() {
+    for(si i=0;i<*this->physicalFrameNumber;i++){
+        this->pageReference[i+1][*currentIndex] = this->searchSpace[0][i];
+    }
+}
+
+void LRU::algo() {
+    bool hit = false;
+    using nextIter = std::vector<u16>::iterator;
+    nextIter minnPos;
+    nextIter found;
+    u16 minnOffSet = 0;
+
+    found = std::ranges::find(searchSpace[0], pageReference[0][*currentIndex]);
+
+    if(found != searchSpace[0].end()) {
+        hit=true;
+        searchSpace[1][std::ranges::distance(searchSpace[0].begin(), found)] = 0;
     }
     else {
-        if (!hit) {
-            minnPos = std::ranges::min_element(searchCount);
-            int minnCount = *minnPos;
-            minnOffset = std::distance(searchCount.begin(), minnPos);
-            searchCount.erase(minnPos);
-            minn = searchSpace.at(minnOffset);
-            pageReference[pageReference.size() - 1][currentIndex] = minn;
-            searchSpace.erase(searchSpace.begin() + minnOffset);
+        minnPos = std::ranges::max_element(searchSpace[1]);
+        minnOffSet = std::ranges::distance(searchSpace[1].begin(), minnPos);
 
-            for (int i = 0; i < searchSpace.size()+1; i++) {
-                if (pageReference[i + 1][currentIndex] == minn) {
-                    pageReference[i + 1][currentIndex] = pageReference[0][currentIndex];
-                    searchSpace.push_back(pageReference[i+1][currentIndex]);
-                    searchCount.push_back(1);
-                }
-            }
+        this->pageReference[pageReference.size()-1][*currentIndex] = searchSpace[0][minnOffSet];
 
-            std::cout << "Min: " << minn << ",  min offset: " << minnOffset << ", min count: " << minnCount
-                      << ", searchSpace size: " << searchSpace.size() << "\n";
-        }
+        searchSpace[0][minnOffSet] = this->pageReference[0][*currentIndex];
+        searchSpace[1][minnOffSet] = 0;
     }
-
-    pageReference[pageReference.size()-2][currentIndex] = hit ? 0 : 1;
-
-}
-void LFU::cleanUp() const{
-
+    pageReference[pageReference.size()-2][*currentIndex] = hit ? 0 : 1;
+    std::ranges::transform(searchSpace[1].begin(),searchSpace[1].end(), searchSpace[1].begin(), [](u16 e){return e+1;});
 }
 
-void LRU::startUp() const{
-
-}
-void LRU::algo() const{
-    bool hit = false;
-    std::vector<u16> searchSpace(pageReference.size()-3, 0);
-    using nextIter = std::vector<u16>::iterator;
-    using testNextIter = std::vector<u16>::reverse_iterator;
-    std::vector<nextIter> nextUses;
-    std::vector<testNextIter> testNextUses;
-    nextUses.resize(searchSpace.size());
-    testNextUses.resize(searchSpace.size());
-    std::vector<u16> distance(searchSpace.size(), 0);
-    si distanceBug = 0;
-    nextIter nextUseBug;
-    u16 toPopDis = 0;
-    u16 toPopIndex = 0;
-
-    //Iter thought physical frames to find frame to replace
-    for(si i=0;i<searchSpace.size(); i++) {
-        //Checks if it is the same last time, to save on computation.
-        searchSpace[i] = pageReference[i+1][currentIndex-1];
-        nextUses[i] = (std::ranges::find(pageReference[0].rbegin()+(pageReference[0].size()-currentIndex),pageReference[0].rend(), searchSpace[i])).base();
-        testNextUses[i] = (std::find((pageReference[0].rbegin()+((int)pageReference[0].size()-(int)currentIndex)),pageReference[0].rend(), searchSpace[i]));
-        nextUseBug = nextUses[i];
-        distanceBug = std::distance(pageReference[0].rend()-currentIndex-1,testNextUses[i]);
-        distance[i] = abs(distanceBug);
-        //If next distance is larger mark to replace that index and store new distance, if not keep the same.
-        if(distance[i] > toPopDis) {
-            toPopDis = distance[i];
-            toPopIndex = i;
-        }
-        //If distance is zero it is hit and if it has been set true for this loop it has already hit and should stay true.
-        hit = (searchSpace[i] == pageReference[0][currentIndex]) || hit;
-
-        pageReference[i+1][currentIndex] = searchSpace[i];
-    }
-    if(!hit){
-        pageReference[pageReference.size()-1][currentIndex] = pageReference[toPopIndex+1][currentIndex];
-    }
-    pageReference[toPopIndex+1][currentIndex] = (!hit) ? pageReference[0][currentIndex] : pageReference[toPopIndex+1][currentIndex];
-    // printf("PD: %i, PI: %i, RN: %i, NN%i, SN: %i, CI: %i\n",toPopDis, toPopIndex, replaced, pageReference[toPopIndex + 1][currentIndex],
-    //        pageReference[0][currentIndex], currentIndex);
-    //Flip failed frame status bit.
-    pageReference[pageReference.size()-2][currentIndex] = hit ? 0 : 1;
-
-}
-void LRU::cleanUp() const{
-
+void LRU::cleanUp() {
+    this->workingPage.clear();
 }
